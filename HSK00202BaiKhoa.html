@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BÀI 2 - BÀI KHÓA</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:Arial,"Microsoft YaHei",sans-serif;
+  background:linear-gradient(135deg,#eef4ff,#f9fbff);
+  display:flex; justify-content:center; color:#202124;
+}
+.app{width:min(900px,96vw); padding:20px 0 30px}
+h1{text-align:center;margin:0 0 6px;font-size:32px}
+.progress{text-align:center;font-size:18px;color:#666;margin-bottom:12px}
+.card-wrap{perspective:1200px; cursor:pointer}
+.card{
+  width:100%; height:750px; position:relative; transform-style:preserve-3d;
+  transition:transform .55s ease;
+}
+.card.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border-radius:24px; background:white; box-shadow:0 12px 35px rgba(30,60,100,.15);
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:32px 36px; border:1px solid #e6eaf0; overflow:hidden;
+}
+.back{transform:rotateY(180deg)}
+
+.card-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.context-title {
+  font-weight: bold;
+  margin-bottom: 20px;
+  font-size: 20px;
+  color: #2c3e50;
+  line-height: 1.5;
+  border-bottom: 2px solid #edf2f7;
+  padding-bottom: 12px;
+}
+.dialogue-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dialogue-table td {
+  vertical-align: top;
+  padding: 10px 0;
+}
+.speaker-col {
+  width: 140px;
+  color: #000000;
+  font-weight: bold;
+  font-size: 22px;
+  white-space: nowrap;
+}
+.speaker-col-front {
+  width: 140px;
+  color: #718096;
+  font-weight: bold;
+  font-size: 36px;
+  white-space: nowrap;
+}
+.speech-col {
+  color: #e53e3e;
+  font-weight: bold;
+  font-size: 36px;
+  line-height: 1.5;
+}
+.speech-col-back {
+  color: #e53e3e;
+  font-weight: bold;
+  font-size: 24px;
+  line-height: 1.5;
+}
+.pinyin-block {
+  color: #718096;
+  font-weight: bold;
+  font-size: 20px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  display: block;
+}
+.meaning-text {
+  font-size: 19px;
+  color: #4b5563;
+  font-weight: normal;
+  margin-top: 4px;
+}
+
+.audio-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  vertical-align: middle;
+}
+.audio-btn:hover {
+  background-color: #edf2f7;
+}
+
+.controls{display:flex;gap:16px;justify-content:center;margin-top:22px}
+button{
+  border:0;border-radius:14px;padding:16px 26px;font-size:20px;
+  cursor:pointer;background:#e9eef7;color:#233044;
+}
+button.primary{background:#2563eb;color:white}
+button:hover{filter:brightness(.97)}
+.extra{display:flex;justify-content:center;gap:10px;margin-top:14px}
+.shuffle{background:#e9f8ef}
+
+@media(max-width:600px){
+ .app{padding-top:16px}.card{height:780px}
+ .face{padding:22px 20px}
+ .context-title{font-size:16px; margin-bottom:14px}
+ .speaker-col{width:100px; font-size:16px}
+ .speaker-col-front{width:100px; font-size:26px}
+ .speech-col{font-size:26px}
+ .speech-col-back{font-size:18px}
+ .pinyin-block{font-size:15px;}
+ .meaning-text{font-size:14px}
+ .controls button{padding:12px 16px; font-size:16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🇨🇳 BÀI 2 - BÀI KHÓA</h1>
+
+  <div class="progress" id="progress"></div>
+
+  <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+    <div class="card" id="card">
+      <div class="face front">
+        <div class="card-content" id="frontContent"></div>
+      </div>
+      <div class="face back">
+        <div class="card-content" id="backContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="event.stopPropagation();prevCard()">← Trước</button>
+    <button class="primary" onclick="event.stopPropagation();flipCard()">Lật thẻ</button>
+    <button onclick="event.stopPropagation();nextCard()">Tiếp →</button>
+  </div>
+  <div class="extra">
+    <button class="shuffle" onclick="event.stopPropagation();shuffleCards()">🔀 Trộn thẻ</button>
+  </div>
+</div>
+
+<script>
+const originalCards = [
+  {
+    "frontContext": "BÀI KHÓA 1: Tại quầy lễ tân khách sạn, Bạch Gia Nguyệt (Bái Jiāyuè) và Annie (Ānnī) hỏi nhân viên phục vụ",
+    "frontLines": [
+      { "speaker": "白家月:", "speech": "请问，这儿有到北京大学的公交车吗？" },
+      { "speaker": "服务员:", "speech": "有，但车站有点儿远。" },
+      { "speaker": "白家月:", "speech": "这儿好打车吗？" },
+      { "speaker": "服务员:", "speech": "好打车。" },
+      { "speaker": "白家月:", "speech": "谢谢。安妮，我们还是打车去吧。" },
+      { "speaker": "安妮:", "speech": "好，没问题。" }
+    ],
+    "backLines": [
+      { "speaker": "白家月:", "speech": "请问，这儿有到北京大学的公交车吗？", "pinyin": "Qǐngwèn, zhèr yǒu dào Běijīng Dàxué de gōngjiāochē ma?", "meaning": "Xin hỏi, ở đây có xe buýt đến Đại học Bắc Kinh không?" },
+      { "speaker": "服务员:", "speech": "有，但车站有点儿远。", "pinyin": "Yǒu, dàn chēzhàn yǒudiǎnr yuǎn.", "meaning": "Có, nhưng bến xe hơi xa một chút." },
+      { "speaker": "白家月:", "speech": "这儿好打车吗？", "pinyin": "Zhèr hǎo dǎchē ma?", "meaning": "Ở đây dễ bắt taxi không?" },
+      { "speaker": "服务员:", "speech": "好打车。", "pinyin": "Hǎo dǎchē.", "meaning": "Dễ bắt taxi." },
+      { "speaker": "白家月:", "speech": "谢谢。安妮，我们还是打车去吧。", "pinyin": "Xièxie. Ānní, wǒmen háishì dǎchē qù ba.", "meaning": "Cảm ơn. Annie, chúng ta vẫn là đi taxi đi." },
+      { "speaker": "安妮:", "speech": "好，没问题。", "pinyin": "Hǎo, méi wèntí.", "meaning": "Được, không vấn đề gì." }
+    ]
+  },
+  {
+    "frontContext": "BÀI KHÓA 2: Tại Đại học Bắc Kinh, Bạch Gia Nguyệt (Bái Jiāyuè) và Annie (Ānnī) tham quan khuôn viên trường",
+    "frontLines": [
+      { "speaker": "白家月:", "speech": "学校里人真多啊！" },
+      { "speaker": "安妮:", "speech": "是啊，北京大学有四万多名学生呢！" },
+      { "speaker": "白家月:", "speech": "你是怎么知道的？" },
+      { "speaker": "安妮:", "speech": "是网上说的，网上还说北京大学有三千多名外国学生。" },
+      { "speaker": "白家月:", "speech": "我也想来这儿学习。" },
+      { "speaker": "安妮:", "speech": "那边就有一间教室，我们去看看吧。" }
+    ],
+    "backLines": [
+      { "speaker": "白家月:", "speech": "学校里人真多啊！", "pinyin": "Xuéxiào lǐ rén zhēn duō a!", "meaning": "Trong trường nhiều người thật đấy!" },
+      { "speaker": "安妮:", "speech": "是啊，北京大学有四万多名学生呢！", "pinyin": "Shì a, Běijīng Dàxué yǒu sìwàn duō míng xuéshēng ne!", "meaning": "Đúng vậy, Đại học Bắc Kinh có hơn bốn vạn sinh viên đấy!" },
+      { "speaker": "白家月:", "speech": "你是怎么知道的？", "pinyin": "Nǐ shì zěnme zhīdào de?", "meaning": "Bạn biết bằng cách nào vậy?" },
+      { "speaker": "安妮:", "speech": "是网上说的，网上还说北京大学有三千多名外国学生。", "pinyin": "Shì wǎngshang shuō de, wǎngshang hái shuō Běijīng Dàxué yǒu sānqiān duō míng wàiguó xuéshēng.", "meaning": "Là trên mạng nói đấy, trên mạng còn nói Đại học Bắc Kinh có hơn ba nghìn sinh viên nước ngoài." },
+      { "speaker": "白家月:", "speech": "我也想来这儿学习。", "pinyin": "Wǒ yě xiǎng lái zhèr xuéxí.", "meaning": "Tôi cũng muốn đến đây học." },
+      { "speaker": "安妮:", "speech": "那边就有一间教室，我们去看看吧。", "pinyin": "Nàbiān jiù yǒu yì jiān jiàoshì, wǒmen qù kàn yíxià ba.", "meaning": "Đằng kia có một phòng học, chúng ta đi xem thử nhé." }
+    ]
+  },
+  {
+    "frontContext": "BÀI KHÓA 3: Tại Đại học Bắc Kinh, Bạch Gia Nguyệt (Bái Jiāyuè) và Annie (Ānnī) tham quan khuôn viên trường",
+    "frontLines": [
+      { "speaker": "安妮:", "speech": "家月，你看，学校里有家电影院！" },
+      { "speaker": "白家月:", "speech": "是啊，电影院还不小。" },
+      { "speaker": "安妮:", "speech": "他们卖的电影票也很便宜。" },
+      { "speaker": "白家月:", "speech": "天啊！有的还不到二十块钱。" },
+      { "speaker": "安妮:", "speech": "那你想不想去看个电影？" },
+      { "speaker": "白家月:", "speech": "还是别看电影了，北京大学就很好看！" }
+    ],
+    "backLines": [
+      { "speaker": "安妮:", "speech": "家月，你看，学校里有家电影院！", "pinyin": "Jiāyuè, nǐ kàn, xuéxiào lǐ yǒu jiā diànyǐngyuàn!", "meaning": "Gia Nguyệt, bạn xem, trong trường có một rạp chiếu phim!" },
+      { "speaker": "白家月:", "speech": "是啊，电影院还不小。", "pinyin": "Shì a, diànyǐngyuàn hái bù xiǎo.", "meaning": "Đúng vậy, rạp chiếu phim cũng không nhỏ." },
+      { "speaker": "安妮:", "speech": "他们卖的电影票也很便宜。", "pinyin": "Tāmen mài de diànyǐngpiào yě hěn piányi.", "meaning": "Vé xem phim họ bán cũng rất rẻ." },
+      { "speaker": "白家月:", "speech": "天啊！有的还不到二十块钱。", "pinyin": "Tiān a! Yǒude hái bú dào èrshí kuài qián.", "meaning": "Trời ơi! Có cái còn chưa đến hai mươi tệ." },
+      { "speaker": "安妮:", "speech": "那你想不想去看个电影？", "pinyin": "Nà nǐ xiǎng bu xiǎng qù kàn ge diànyǐng?", "meaning": "Vậy bạn có muốn đi xem phim không?" },
+      { "speaker": "白家月:", "speech": "还是别看电影了，北京大学就很好看！", "pinyin": "Háishi bié kàn diànyǐng le, Běijīng Dàxué jiù hěn hǎokàn!", "meaning": "Vẫn là đừng xem phim nữa, Đại học Bắc Kinh đã rất đẹp rồi!" }
+    ]
+  },
+  {
+    "frontContext": "BÀI KHÓA 4: Tại cổng Đại học Bắc Kinh, Bạch Gia Nguyệt (Bái Jiāyuè) nhắn tin cho Trần Thiên Trung (Chén Tiānzhōng)",
+    "frontLines": [
+      { "speaker": "白家月:", "speech": "北京大学很大，有四万多名学生。学校很漂亮，里边还有家电影院，电影票也不贵，我们有时间还想再过来看个电影。" }
+    ],
+    "backLines": [
+      { "speaker": "白家月:", "speech": "北京大学很大，有四万多名学生。学校很漂亮，里边还有家电影院，电影票也不贵，我们有时间还想再过来看个电影。", "pinyin": "Běijīng Dàxué hěn dà, yǒu sìwàn duō míng xuéshēng. Xuéxiào hěn piàoliang, lǐbian hái yǒu jiā diànyǐngyuàn, diànyǐngpiào yě bú guì. Wǒmen yǒu shíjiān hái xiǎng zài guòlái kàn ge diànyǐng.", "meaning": "Đại học Bắc Kinh rất lớn, có hơn bốn vạn sinh viên. Trường rất đẹp, bên trong còn có một rạp chiếu phim, vé xem phim cũng không đắt, chúng tớ mà có thời gian còn muốn ghé qua xem phim nữa." }
+    ]
+  }
+];
+
+let cards = [...originalCards];
+let index = 0;
+let flipped = false;
+
+function speakText(event, text) {
+  event.stopPropagation();
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  } else {
+    alert('Trình duyệt của bạn không hỗ trợ tính năng phát âm.');
+  }
+}
+
+function render(){
+  const c = cards[index];
+  
+  let frontHtml = `<div class="context-title">${c.frontContext}</div><table class="dialogue-table">`;
+  c.frontLines.forEach(line => {
+    frontHtml += `
+      <tr>
+        <td class="speaker-col-front">${line.speaker}</td>
+        <td class="speech-col">
+          ${line.speech}
+          <button class="audio-btn" onclick="speakText(event, '${line.speech.replace(/'/g, "\\'")}')" title="Nghe phát âm">🔊</button>
+        </td>
+      </tr>`;
+  });
+  frontHtml += `</table>`;
+  document.getElementById('frontContent').innerHTML = frontHtml;
+
+  let backHtml = `<div class="context-title">${c.frontContext}</div><table class="dialogue-table">`;
+  c.backLines.forEach(line => {
+    backHtml += `
+      <tr>
+        <td class="speaker-col">${line.speaker}</td>
+        <td class="speech-col-back">
+          ${line.speech}
+          <button class="audio-btn" onclick="speakText(event, '${line.speech.replace(/'/g, "\\'")}')" title="Nghe phát âm">🔊</button>
+          <div class="pinyin-block">${line.pinyin}</div>
+          <div class="meaning-text">${line.meaning}</div>
+        </td>
+      </tr>`;
+  });
+  backHtml += `</table>`;
+  document.getElementById('backContent').innerHTML = backHtml;
+
+  document.getElementById('progress').textContent = `Thẻ ${index+1} / ${cards.length}`;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+}
+
+function flipCard(){
+  flipped = !flipped;
+  document.getElementById('card').classList.toggle('flipped', flipped);
+}
+
+function nextCard(){
+  index = (index + 1) % cards.length;
+  flipped = false; render();
+}
+
+function prevCard(){
+  index = (index - 1 + cards.length) % cards.length;
+  flipped = false; render();
+}
+
+function shuffleCards(){
+  for(let i=cards.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [cards[i],cards[j]]=[cards[j],cards[i]];
+  }
+  index=0; flipped=false; render();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') nextCard();
+  else if(e.key==='ArrowLeft') prevCard();
+  else if(e.key===' ' || e.key==='Enter'){
+    e.preventDefault();
+    flipCard();
+  }
+});
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BÀI 2 – NGỮ PHÁP - Flashcard</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; font-family:Arial,"Microsoft YaHei",sans-serif;
+  background:#fdfbf7;
+  display:flex; justify-content:center; color:#202124;
+}
+.app{width:min(860px,96vw); padding:30px 0 40px}
+h1{text-align:center;margin:0 0 15px;font-size:32px; font-weight: bold;}
+.progress{text-align:center;font-size:18px;color:#444;margin-bottom:20px; font-weight: bold;}
+.card-wrap{perspective:1200px; cursor:pointer}
+.card{
+  width:100%; height:592px; position:relative; transform-style:preserve-3d;
+  transition:transform .55s ease;
+}
+.card.flipped{transform:rotateY(180deg)}
+.face{
+  position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  border-radius:24px; background:white; box-shadow:0 15px 45px rgba(0,0,0,.15);
+  display:flex; flex-direction:column; padding:36px; border:3px solid #eee; 
+  overflow-y: auto;
+}
+.front{justify-content:flex-start; align-items:flex-start; text-align:left}
+.back{transform:rotateY(180deg); text-align:left; align-items:flex-start; justify-content:flex-start; padding-top:30px;}
+
+.hl-blue { color: #ffffff; font-weight: bold; background-color: #2563eb; padding: 2px 6px; border-radius: 4px; }
+.zh-back { color: #2563eb; font-weight: bold; font-size: 1.45em; line-height: 1.2; display: inline-block; margin-top: 10px; margin-bottom: 2px; }
+.pinyin-back { color: #666666; font-weight: bold; font-size: 1.15em; display: block; margin: 2px 0; }
+.vi-back { font-size: 1.05em; color: #333; display: block; margin-bottom: 12px; line-height: 1.35; }
+
+.desc-front { font-size: 1.38em; color: #333; margin: 6px 0; text-align: left; width: 100%; line-height: 1.45; }
+.desc{font-size: 1.1em; color: #333; margin: 0; text-align: left; width: 100%; line-height: 1.35; }
+
+.controls{display:flex;gap:20px;justify-content:center;margin-top:30px}
+button{
+  border:0;border-radius:20px;padding:20px 35px;font-size:22px;
+  cursor:pointer;background:#e9eef7;color:#233044; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,.1);
+}
+button.primary{background:#2563eb;color:white}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <h1 id="title">BÀI 2 – NGỮ PHÁP</h1>
+  <div class="progress" id="progress"></div>
+
+  <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+    <div class="card" id="card">
+      <div class="face front" id="frontFace"></div>
+      <div class="face back" id="backFace"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="event.stopPropagation();prevCard()" id="prevBtn">← TRƯỚC</button>
+    <button class="primary" onclick="event.stopPropagation();flipCard()">LẬT THẺ</button>
+    <button onclick="event.stopPropagation();nextCard()" id="nextBtn">TIẾP →</button>
+  </div>
+</div>
+
+<script>
+const cards = [
+  {
+    f: "<div style='text-align:center; width:100%; font-size:1.6em; font-weight:bold; margin-bottom:4px;'>HAY LÀ… ĐI (<span style='color:#dc2626;'>还是……吧</span>)</div>" +
+       "<div class='desc-front' style='margin-top:10px;'>" +
+       "Cấu trúc này dùng khi bạn muốn đưa ra một sự lựa chọn mà bạn cảm thấy là tốt hơn, hợp lý hơn so với những lựa chọn khác. Nó mang ý nghĩa giống như làm thế này thì tốt hơn." +
+       "</div>",
+    b: "<div class='desc'>" +
+       "<span class='zh-back'>打车太贵了，我们还是坐公交车去吧。</span>" +
+       "<span class='pinyin-back'>Dǎchē tài guì le, wǒmen háishì zuò gōngjiāochē qù ba.</span>" +
+       "<span class='vi-back'>(Bắt taxi đắt quá, chúng ta vẫn là đi xe buýt đi.)</span>" +
+       
+       "<span class='zh-back'>你第一次去北京，还是找个人接你吧。</span>" +
+       "<span class='pinyin-back'>Nǐ dì-yī cì qù Běijīng, háishì zhǎo gè rén jiē nǐ ba.</span>" +
+       "<span class='vi-back'>(Bạn lần đầu đến Bắc Kinh, hay là tìm một người đến đón bạn đi.)</span>" +
+       
+       "<span class='zh-back'>明天有雨，我们还是今天去吧。</span>" +
+       "<span class='pinyin-back'>Míngtiān yǒu yǔ, wǒmen háishì jīntiān qù ba.</span>" +
+       "<span class='vi-back'>(Mai có mưa, chúng ta vẫn là đi hôm nay đi.)</span>" +
+       
+       "<span class='zh-back'>天气不好，我们还是在家看电视吧。</span>" +
+       "<span class='pinyin-back'>Tiānqì bù hǎo, wǒmen háishì zài jiā kàn diànshì ba.</span>" +
+       "<span class='vi-back'>(Thời tiết không tốt, chúng ta vẫn là ở nhà xem tivi đi.)</span>" +
+       
+       "<span class='zh-back'>下课了，但外边下雨了，我还是在教室里看书吧。</span>" +
+       "<span class='pinyin-back'>Xiàkè le, dàn wàibian xià yǔ le, wǒ háishì zài jiàoshì lǐ kàn shū ba.</span>" +
+       "<span class='vi-back'>(Tan học rồi, nhưng bên ngoài mưa rồi, tôi vẫn là ở trong lớp đọc sách vậy.)</span>" +
+       
+       "<span class='zh-back'>我们还是问一下老师吧。</span>" +
+       "<span class='pinyin-back'>Wǒmen háishì wèn yíxià lǎoshī ba.</span>" +
+       "<span class='vi-back'>(Chúng ta vẫn là hỏi thầy giáo một chút đi.)</span>" +
+       
+       "<span class='zh-back'>你还是过来吧。</span>" +
+       "<span class='pinyin-back'>Nǐ háishì guòlái ba.</span>" +
+       "<span class='vi-back'>(Bạn vẫn là qua đây đi.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div style='text-align:center; width:100%; font-size:1.6em; font-weight:bold; margin-bottom:4px;'>HƠN <span style='color:#dc2626;'>多</span></div>" +
+       "<div class='desc-front' style='margin-top:10px;'>" +
+       "Dùng <span class='hl-blue'>多</span> để chỉ số lượng ước chừng.<br><br>" +
+       "• Nếu con số kết thúc bằng 1-9, thì <span class='hl-blue'>多</span> đặt sau lượng từ. Như là 五斤多 (Hơn 5 cân).<br>" +
+       "• Nếu con số kết thúc bằng 0, thì <span class='hl-blue'>多</span> đặt trước lượng từ. Như là 五十多斤 (Hơn 50 cân).<br><br>" +
+       "<b>Lưu ý:</b> <span class='hl-blue'>多</span> đứng sau cái gì thì làm lẻ cho cái đó. Lượng từ nào lẻ được mới dùng với <span class='hl-blue'>多</span> (ví dụ không dùng ❌ 五个多人 nhưng dùng được ✔️ 一个多小时)." +
+       "</div>",
+    b: "<div class='desc'>" +
+       "<span class='zh-back'>北京大学有四万多名学生。</span>" +
+       "<span class='pinyin-back'>Běijīng Dàxué yǒu sì wàn duō míng xuésheng.</span>" +
+       "<span class='vi-back'>(Đại học Bắc Kinh có hơn 4 vạn sinh viên.)</span>" +
+       
+       "<span class='zh-back'>教室里有二十多个学生。</span>" +
+       "<span class='pinyin-back'>Jiàoshì lǐ yǒu èrshí duō gè xuésheng.</span>" +
+       "<span class='vi-back'>(Trong lớp có hơn 20 học sinh.)</span>" +
+       
+       "<span class='zh-back'>这家饭店的菜都不贵，一个菜十多块钱。</span>" +
+       "<span class='pinyin-back'>Zhè jiā fàndiàn de cài dōu bú guì, yí gè cài shí duō kuài qián.</span>" +
+       "<span class='vi-back'>(Món ăn ở nhà hàng này đều không đắt, một món hơn 10 tệ.)</span>" +
+       
+       "<span class='zh-back'>我们学校有一万多名中国学生，还有两千多名外国学生。</span>" +
+       "<span class='pinyin-back'>Wǒmen xuéxiào yǒu yí wàn duō míng Zhōngguó xuésheng, hái yǒu liǎng qiān duō míng wàiguó xuésheng.</span>" +
+       "<span class='vi-back'>(Trường chúng tôi có hơn 1 vạn học sinh Trung Quốc, còn có hơn 2000 học sinh nước ngoài.)</span>" +
+       
+       "<span class='zh-back'>这两个苹果五块多钱。</span>" +
+       "<span class='pinyin-back'>Zhè liǎng gè píngguǒ wǔ kuài duō qián.</span>" +
+       "<span class='vi-back'>(Hai quả táo này hơn 5 tệ.)</span>" +
+       
+       "<span class='zh-back'>他五岁多了。</span>" +
+       "<span class='pinyin-back'>Tā wǔ suì duō le.</span>" +
+       "<span class='vi-back'>(Cậu ấy hơn 5 tuổi rồi.)</span>" +
+       
+       "<span class='zh-back'>不远，十多分钟就到了。</span>" +
+       "<span class='pinyin-back'>Bù yuǎn, shí duō fēnzhōng jiù dào le.</span>" +
+       "<span class='vi-back'>(Không xa, hơn 10 phút là đến rồi.)</span>" +
+       
+       "<span class='zh-back'>这儿有二十多间教室。</span>" +
+       "<span class='pinyin-back'>Zhè'er yǒu èrshí duō jiān jiàoshì.</span>" +
+       "<span class='vi-back'>(Ở đây có hơn 20 phòng học.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div style='text-align:center; width:100%; font-size:1.6em; font-weight:bold; margin-bottom:4px;'>ĐỘNG TỪ, CỤM CHỦ VỊ ĐỨNG TRƯỚC DANH TỪ</div>" +
+       "<div class='desc-front' style='margin-top:10px;'>" +
+       "Khi muốn dùng một hành động hoặc một câu để mô tả đặc điểm, trạng thái của một người hay một vật (danh từ), có thể đặt cụm từ đó ngay trước danh từ.<br><br>" +
+       "Trong tiếng Trung, phần bổ nghĩa này luôn đứng trước danh từ và thường có trợ từ <span class='hl-blue'>的</span> nối giữa." +
+       "</div>",
+    b: "<div class='desc'>" +
+       "<span class='zh-back'>他们卖的电影票也很便宜。</span>" +
+       "<span class='pinyin-back'>Tāmen mài de diànyǐng piào yě hěn piányi.</span>" +
+       "<span class='vi-back'>(Vé xem phim mà họ bán cũng rất rẻ. -> 'họ bán' bổ nghĩa cho 'vé xem phim')</span>" +
+       
+       "<span class='zh-back'>现在学中文的学生很多。</span>" +
+       "<span class='pinyin-back'>Xiànzài xué Zhōngwén de xuésheng hěn duō.</span>" +
+       "<span class='vi-back'>(Hiện nay học sinh học tiếng Trung rất nhiều. -> 'học tiếng Trung' bổ nghĩa cho 'học sinh')</span>" +
+       
+       "<span class='zh-back'>这是朋友给我的杯子。</span>" +
+       "<span class='pinyin-back'>Zhè shì péngyou gěi wǒ de bēizi.</span>" +
+       "<span class='vi-back'>(Đây là cái cốc mà bạn tôi cho tôi. -> 'bạn tôi cho tôi' bổ nghĩa cho 'cái cốc')</span>" +
+       
+       "<span class='zh-back'>这是谁买的苹果？</span>" +
+       "<span class='pinyin-back'>Zhè shì shuí mǎi de píngguǒ?</span>" +
+       "<span class='vi-back'>(Đây là táo ai mua?)</span>" +
+       
+       "<span class='zh-back'>我觉得你买的衣服很好看。</span>" +
+       "<span class='pinyin-back'>Wǒ juéde nǐ mǎi de yīfu hěn hǎokàn.</span>" +
+       "<span class='vi-back'>(Tôi thấy quần áo bạn mua rất đẹp.)</span>" +
+       
+       "<span class='zh-back'>这是我们的教室，但学生们都去外边玩了。</span>" +
+       "<span class='pinyin-back'>Zhè shì wǒmen de jiàoshì, dàn xuéshengmen dōu qù wàibian wán le.</span>" +
+       "<span class='vi-back'>(Đây là phòng học của chúng tôi, nhưng học sinh đều ra ngoài chơi rồi.)</span>" +
+       
+       "<span class='zh-back'>我和朋友去看电影了，是她买的票。</span>" +
+       "<span class='pinyin-back'>Wǒ hé péngyou qù kàn diànyǐng le, shì tā mǎi de piào.</span>" +
+       "<span class='vi-back'>(Tôi và bạn đi xem phim rồi, là vé cô ấy mua.)</span>" +
+       "</div>"
+  },
+  {
+    f: "<div style='text-align:center; width:100%; font-size:1.6em; font-weight:bold; margin-bottom:4px;'>MỘT SỐ LƯU Ý VỀ TỪ VỰNG ĐI KÈM</div>" +
+       "<div class='desc-front' style='margin-top:10px;'>" +
+       "<b>1. Chữ 好 trong 好打车:</b> Không có nghĩa là tốt mà có nghĩa là <i>dễ, thuận lợi</i>. (Ví dụ: 下雪天不好打车 - Ngày tuyết rơi khó bắt taxi).<br>" +
+       "<b>2. Cụm từ 天啊:</b> Biểu thị sự ngạc nhiên ('Trời ơi!').<br>" +
+       "<b>3. Chữ 到 trong 还不到二十块钱:</b> Nghĩa là 'đạt đến' (chưa đạt đến 20 tệ).<br>" +
+       "<b>4. Phân biệt 二 và 两:</b> Trước lượng từ thường dùng 两 (两千多名, 两间教室).<br>" +
+       "<b>5. Cách dùng 问一下:</b> Lịch sự, mềm mỏng. 一下 làm giảm nhẹ mức độ hành động." +
+       "</div>",
+    b: "<div class='desc'>" +
+       "<span class='zh-back'>下雪天不好打车。</span>" +
+       "<span class='pinyin-back'>Xià xuě tiān bù hǎo dǎchē.</span>" +
+       "<span class='vi-back'>(Ngày tuyết rơi khó bắt taxi.)</span>" +
+       
+       "<span class='zh-back'>有的还不到二十块钱。</span>" +
+       "<span class='pinyin-back'>Yǒu de hái búdào èrshí kuài qián.</span>" +
+       "<span class='vi-back'>(Có cái còn chưa đến/chưa đạt đến 20 tệ.)</span>" +
+       
+       "<span class='zh-back'>两千多名外国学生</span>" +
+       "<span class='pinyin-back'>liǎng qiān duō míng wàiguó xuésheng</span>" +
+       "<span class='vi-back'>(Hơn 2000 sinh viên nước ngoài - Dùng 两 thay vì 二)</span>" +
+       
+       "<span class='zh-back'>两间教室</span>" +
+       "<span class='pinyin-back'>liǎng jiān jiàoshì</span>" +
+       "<span class='vi-back'>(Hai phòng học)</span>" +
+       
+       "<span class='zh-back'>你还是问一下老师吧。</span>" +
+       "<span class='pinyin-back'>Nǐ háishì wèn yíxià lǎoshī ba.</span>" +
+       "<span class='vi-back'>(Bạn vẫn là hỏi thầy giáo một chút đi - Nói lịch sự, mềm mỏng)</span>" +
+       "</div>"
+  }
+];
+
+let idx = 0;
+
+function render() {
+  document.getElementById('frontFace').innerHTML = cards[idx].f;
+  document.getElementById('backFace').innerHTML = cards[idx].b;
+  document.getElementById('progress').innerText = `Thẻ ${idx + 1} / ${cards.length}`;
+}
+
+function flipCard() {
+  document.getElementById('card').classList.toggle('flipped');
+}
+
+function nextCard() {
+  idx = (idx + 1) % cards.length;
+  document.getElementById('card').classList.remove('flipped');
+  render();
+}
+
+function prevCard() {
+  idx = (idx - 1 + cards.length) % cards.length;
+  document.getElementById('card').classList.remove('flipped');
+  render();
+}
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === ' ' || event.key === 'Enter') {
+    flipCard();
+    event.preventDefault();
+  } else if (event.key === 'ArrowRight') {
+    nextCard();
+  } else if (event.key === 'ArrowLeft') {
+    prevCard();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
